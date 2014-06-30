@@ -29,6 +29,8 @@ import (
 	"time"
 )
 
+var charsResult map[int]string
+
 func timing(timFunc func()) (nanoSec int64) {
 	timerStart := time.Now().UnixNano()
 	timFunc()
@@ -67,74 +69,98 @@ func chars(i int) (c string) {
 }
 
 func main() {
-	for i := 1; i < 1000000; i *= 10 {
-		cicle(i)
-		runtime.GC()
+	charsResult = make(map[int]string)
+	for i := 1; i < 1000000; i++ {
+		charsResult[i] = chars(i)
+	}
+	for i := 1; i < 1000000; i += 100 {
+		var btFillTime, mapFillTime, btRangeTime, mapRangeTime, btGetTime, mapGetTime, btDeleteTime, mapDeleteTime int64
+		for j := 0; j < 1000; j++ {
+      stepBtFillTime, stepMapFillTime, stepBtRangeTime, stepMapRangeTime, stepBtGetTime, stepMapGetTime, stepBtDeleteTime, stepMapDeleteTime := cicle(i)
+			btFillTime += stepBtFillTime
+			mapFillTime += stepMapFillTime
+			btRangeTime += stepBtRangeTime
+			mapRangeTime += stepMapRangeTime
+			btGetTime += stepBtGetTime
+			mapGetTime += stepMapGetTime
+      btDeleteTime += stepBtDeleteTime
+			mapDeleteTime += stepMapDeleteTime
+			runtime.GC()
+		}
+		btFillTime = int64(float64(btFillTime) / 1000.0)
+		btRangeTime = int64(float64(btRangeTime) / 1000.0)
+		btGetTime = int64(float64(btGetTime) / 1000.0)
+		btDeleteTime = int64(float64(btDeleteTime) / 1000.0)
+		mapFillTime = int64(float64(mapFillTime) / 1000.0)
+		mapRangeTime = int64(float64(mapRangeTime) / 1000.0)
+		mapGetTime = int64(float64(mapGetTime) / 1000.0)
+		mapDeleteTime = int64(float64(mapDeleteTime) / 1000.0)
+		w := new(tabwriter.Writer)
+		w.Init(os.Stderr, 0, 8, 0, '\t', 0)
+		fmt.Fprintln(w, "Name\t| BinaryTree\t| Map\t| Percent\t| Winner")
+		fmt.Fprintln(w, "Fill\t| ", btFillTime, "\t| ", mapFillTime, "\t| ", percent(btFillTime, mapFillTime), "\t| ", winner(btFillTime, mapFillTime))
+		fmt.Fprintln(w, "Range\t| ", btRangeTime, "\t| ", mapRangeTime, "\t| ", percent(btRangeTime, mapRangeTime), "\t| ", winner(btRangeTime, mapRangeTime))
+		fmt.Fprintln(w, "Get\t| ", btGetTime, "\t| ", mapGetTime, "\t| ", percent(btGetTime, mapGetTime), "\t| ", winner(btGetTime, mapGetTime))
+		fmt.Fprintln(w, "Delete\t| ", btDeleteTime, "\t| ", mapDeleteTime, "\t| ", percent(btDeleteTime, mapDeleteTime), "\t| ", winner(btDeleteTime, mapDeleteTime))
+		fmt.Fprintln(w)
+		w.Flush()
+		fmt.Println(i, btFillTime, mapFillTime, btRangeTime, mapRangeTime, btGetTime, mapGetTime, btDeleteTime, mapDeleteTime)
 	}
 
 }
 
-func cicle(LOOP_COUNT int) {
+func cicle(LOOP_COUNT int) (btFillTime, mapFillTime, btRangeTime, mapRangeTime, btGetTime, mapGetTime, btDeleteTime, mapDeleteTime int64) {
 	bt := new(BinaryTree)
 	mp := make(map[string]interface{})
 
-	btFillTime := timing(func() {
+	btFillTime = timing(func() {
 		i := 0
 		for i < LOOP_COUNT {
-			bt.Set(chars(i), i)
+			bt.Set(charsResult[i], i)
 			i++
 		}
 	})
 
-	btRangeTime := timing(func() {
+	btRangeTime = timing(func() {
 		bt.Range(func(node *BinaryTree) {
 			node.Value = node.Value
 		})
 	})
 
-	btGetTime := timing(func() {
+	btGetTime = timing(func() {
 		for i := LOOP_COUNT; i > 0; i-- {
-			_, _ = bt.Get(chars(i))
+			_, _ = bt.Get(charsResult[i])
 		}
 	})
 
-	btDeleteTime := timing(func() {
+	btDeleteTime = timing(func() {
 		for i := LOOP_COUNT; i > 0; i-- {
-			bt.Delete(chars(i))
+			bt.Delete(charsResult[i])
 		}
 	})
 
-	mapFillTime := timing(func() {
+	mapFillTime = timing(func() {
 		for i := 0; i < LOOP_COUNT; i++ {
-			mp[chars(i)] = i
+			mp[charsResult[i]] = i
 		}
 	})
 
-	mapRangeTime := timing(func() {
+	mapRangeTime = timing(func() {
 		for index, value := range mp {
 			mp[index] = value
 		}
 	})
 
-	mapGetTime := timing(func() {
+	mapGetTime = timing(func() {
 		for i := LOOP_COUNT; i > 0; i-- {
-			_, _ = mp[chars(i)]
+			_, _ = mp[charsResult[i]]
 		}
 	})
 
-	mapDeleteTime := timing(func() {
+	mapDeleteTime = timing(func() {
 		for i := LOOP_COUNT; i > 0; i-- {
-			delete(mp, chars(i))
+			delete(mp, charsResult[i])
 		}
 	})
-	fmt.Println("Element count:", LOOP_COUNT)
-	w := new(tabwriter.Writer)
-	w.Init(os.Stdout, 0, 8, 0, '\t', 0)
-	fmt.Fprintln(w, "Name\t| BinaryTree\t| Map\t| Percent\t| Winner")
-	fmt.Fprintln(w, "Fill\t| ", btFillTime, "\t| ", mapFillTime, "\t| ", percent(btFillTime, mapFillTime), "\t| ", winner(btFillTime, mapFillTime))
-	fmt.Fprintln(w, "Range\t| ", btRangeTime, "\t| ", mapRangeTime, "\t| ", percent(btRangeTime, mapRangeTime), "\t| ", winner(btRangeTime, mapRangeTime))
-	fmt.Fprintln(w, "Get\t| ", btGetTime, "\t| ", mapGetTime, "\t| ", percent(btGetTime, mapGetTime), "\t| ", winner(btGetTime, mapGetTime))
-	fmt.Fprintln(w, "Delete\t| ", btDeleteTime, "\t| ", mapDeleteTime, "\t| ", percent(btDeleteTime, mapDeleteTime), "\t| ", winner(btDeleteTime, mapDeleteTime))
-	fmt.Fprintln(w)
-	w.Flush()
+	return btFillTime, mapFillTime, btRangeTime, mapRangeTime, btGetTime, mapGetTime, btDeleteTime, mapDeleteTime
 }
