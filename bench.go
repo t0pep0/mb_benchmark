@@ -70,10 +70,10 @@ func chars(i int) (c string) {
 
 func main() {
 	charsResult = make(map[int]string)
-	for i := 1; i < 1000000; i++ {
+	for i := 1; i < 1000; i++ {
 		charsResult[i] = chars(i)
 	}
-	for i := 1; i < 1000000; i += 100 {
+	for i := 1; i < 1000; i += 10 {
 		var btFillTime, mapFillTime, btRangeTime, mapRangeTime, btGetTime, mapGetTime, btDeleteTime, mapDeleteTime int64
 		for j := 0; j < 1000; j++ {
       stepBtFillTime, stepMapFillTime, stepBtRangeTime, stepMapRangeTime, stepBtGetTime, stepMapGetTime, stepBtDeleteTime, stepMapDeleteTime := cicle(i)
