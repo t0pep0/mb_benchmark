@@ -29,7 +29,7 @@ import (
 	"time"
 )
 
-var charsResult map[int]string
+var charsResult [1000]string
 
 func timing(timFunc func()) (nanoSec int64) {
 	timerStart := time.Now().UnixNano()
@@ -69,9 +69,9 @@ func chars(i int) (c string) {
 }
 
 func main() {
-	charsResult = make(map[int]string)
-	for i := 1; i < 1000; i++ {
-		charsResult[i] = chars(i)
+  charsResult := make([]string, 1001)
+	for i := 0; i <= 1000; i++ {
+		charsResult = append(charsResult, chars(i))
 	}
 	for i := 1; i < 1000; i += 10 {
 		var btFillTime, mapFillTime, btRangeTime, mapRangeTime, btGetTime, mapGetTime, btDeleteTime, mapDeleteTime int64
@@ -123,14 +123,14 @@ func cicle(LOOP_COUNT int) (btFillTime, mapFillTime, btRangeTime, mapRangeTime, 
 
 	btRangeTime = timing(func() {
 		bt.Range(func(node *BinaryTree) {
-			node.Value = node.Value
+			node.Value = node.Value.(int) + 1
 		})
 	})
 
 	btGetTime = timing(func() {
 		for i := LOOP_COUNT; i > 0; i-- {
-			_, _ = bt.Get(charsResult[i])
-		}
+      bt.Get(charsResult[i])
+      }
 	})
 
 	btDeleteTime = timing(func() {
@@ -147,13 +147,13 @@ func cicle(LOOP_COUNT int) (btFillTime, mapFillTime, btRangeTime, mapRangeTime, 
 
 	mapRangeTime = timing(func() {
 		for index, value := range mp {
-			mp[index] = value
+		  mp[index] = value.(int) - 1 
 		}
 	})
 
 	mapGetTime = timing(func() {
 		for i := LOOP_COUNT; i > 0; i-- {
-			_, _ = mp[charsResult[i]]
+		  _ = mp[charsResult[i]]
 		}
 	})
 
